@@ -9,7 +9,11 @@ import os
 
 load_dotenv()
 
-app = Flask(__name__)
+# Serve built frontend from ../frontend/build when available so
+# backend can provide a single URL for the whole app.
+base_dir = os.path.dirname(os.path.abspath(__file__))
+frontend_build = os.path.join(base_dir, '..', 'frontend', 'build')
+app = Flask(__name__, static_folder=frontend_build, template_folder=frontend_build)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')

@@ -1,12 +1,13 @@
-from flask import request, jsonify
+from flask import request, jsonify, send_from_directory
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from config import app, db
+import os
 from models import User, SubscriptionPlan, UserSubscription, Attendance, HealthProfile, WorkoutClass, ClassRSVP
 from datetime import datetime, timedelta
 import logging
 
-@app.route('/')
-def home():
+@app.route('/api/')
+def api_home():
     return jsonify({"message": "Gym Management System Backend - API is running"}), 200
 
 @app.route('/api/register', methods=['POST'])
@@ -426,3 +427,22 @@ def register_subscription():
     except Exception as e:
         logging.error(f"Subscription registration error: {str(e)}")
         return jsonify({'error': 'Internal server error'}), 500
+
+
+# Serve frontend build for all non-API routes so the app is reachable
+# via a single base URL (e.g. http://localhost:10000)
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve_frontend(path):
+    # Do not intercept API requests
+    if path.startswith('api'):
+        return jsonify({'error': 'Not Found'}), 404
+
+    build_dir = app.template_folder
+    # If requested file exists in the build folder, serve it directly
+    requested_path = os.path.join(build_dir, path)
+    if path != '' and os.path.exists(requested_path):
+        return send_from_directory(build_dir, path)
+
+    # Fallback to index.html for client-side routing
+    return send_from_directory(build_dir, 'index.html')
